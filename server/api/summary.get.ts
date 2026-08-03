@@ -54,6 +54,7 @@ export default defineEventHandler(async (event) => {
       .eq('fund', 'daily')
       .lte('effective_from', today)
       .order('effective_from', { ascending: false })
+      .order('created_at', { ascending: false })
       .limit(1)
       .maybeSingle()
     const monthlyAmount = rate?.monthly_amount ?? 0
@@ -84,7 +85,9 @@ export default defineEventHandler(async (event) => {
     }
 
     const accumulatedRemaining = monthlyAmount + income - expense
-    const dailyRate = cycle.totalDays > 0 ? monthlyAmount / cycle.totalDays : 0
+    // extra income topped up into `daily` mid-cycle raises the daily allowance for the
+    // rest of the cycle too, not just the accumulated total — confirmed with the user
+    const dailyRate = cycle.totalDays > 0 ? (monthlyAmount + income) / cycle.totalDays : 0
     const dailyRemaining = dailyRate * cycle.elapsedDays - realSpending
 
     return {
@@ -107,6 +110,7 @@ export default defineEventHandler(async (event) => {
       .eq('fund', 'fixed')
       .lte('effective_from', today)
       .order('effective_from', { ascending: false })
+      .order('created_at', { ascending: false })
       .limit(1)
       .maybeSingle()
     const budgeted = rate?.monthly_amount ?? 0
