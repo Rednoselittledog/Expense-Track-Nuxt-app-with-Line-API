@@ -5,8 +5,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Skeleton } from '@/components/ui/skeleton'
 import { toast } from 'vue-sonner'
-import { ArrowLeft, SlidersHorizontal, Wallet, Check, TriangleAlert } from '@lucide/vue'
+import { SlidersHorizontal, Wallet, Check, TriangleAlert } from '@lucide/vue'
 
 const { t, setLocale } = useI18n()
 const colorMode = useColorMode()
@@ -15,15 +16,17 @@ const palette = usePalette()
 const { data: profile } = await useCurrentProfile()
 const profileId = computed(() => profile.value?.id ?? '')
 
-const { data: dailySummary } = await useAsyncData(
-  'settings-daily-summary',
+// same keys BalanceCards.vue uses for these — reuses its cached result instead of
+// re-fetching, so switching to this tab is instant just like transactions/categories
+const { data: dailySummary, pending: dailyPending } = useAsyncData(
+  'balance-cards-daily',
   () => $fetch<{ monthlyAmount: number }>('/api/summary', { query: { profileId: profileId.value, view: 'daily' } }),
-  { watch: [profileId] }
+  { watch: [profileId], lazy: true }
 )
-const { data: fixedSummary } = await useAsyncData(
-  'settings-fixed-summary',
+const { data: fixedSummary, pending: fixedPending } = useAsyncData(
+  'balance-cards-fixed',
   () => $fetch<{ budgeted: number }>('/api/summary', { query: { profileId: profileId.value, view: 'fixed' } }),
-  { watch: [profileId] }
+  { watch: [profileId], lazy: true }
 )
 
 const locale = ref<'th' | 'en'>('th')
@@ -132,17 +135,8 @@ function preventCloseWhileResetting(e: Event) {
 </script>
 
 <template>
-  <div class="bg-hero-gradient mx-auto max-w-md p-4 pb-20 md:max-w-3xl md:pb-8 md:p-8">
-    <header class="mb-6 flex items-center gap-3">
-      <NuxtLink
-        to="/"
-        class="hover:bg-accent flex size-9 items-center justify-center rounded-full transition-colors"
-        :aria-label="t('actions.cancel')"
-      >
-        <ArrowLeft class="size-5" />
-      </NuxtLink>
-      <h1 class="text-h3">{{ t('settings.title') }}</h1>
-    </header>
+  <div class="mx-auto max-w-3xl">
+    <h1 class="text-h3 mb-6">{{ t('settings.title') }}</h1>
 
     <div class="grid gap-4 md:grid-cols-2">
       <Card class="animate-enter">
@@ -239,7 +233,9 @@ function preventCloseWhileResetting(e: Event) {
             </Tabs>
 
             <label class="text-small mb-2 block">{{ t('settings.monthlyBudget') }}</label>
+            <Skeleton v-if="dailyPending || fixedPending" class="h-9 w-full" />
             <Input
+              v-else
               type="number"
               :model-value="activeAmount"
               @update:model-value="(v: unknown) => (activeAmount = Number(v))"
@@ -319,7 +315,5 @@ function preventCloseWhileResetting(e: Event) {
         </DialogFooter>
       </DialogContent>
     </Dialog>
-
-    <DashboardMobileNav />
   </div>
 </template>

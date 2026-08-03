@@ -57,7 +57,7 @@ function openManualAdd() {
 }
 
 const transferDialogOpen = ref(false)
-const mobileTab = computed(() => (route.query.tab as 'transactions' | 'categories' | undefined) ?? 'home')
+const mobileTab = computed(() => (route.query.tab as 'transactions' | 'categories' | 'settings' | undefined) ?? 'home')
 
 watchEffect(() => {
   if (route.query.add === '1') {
@@ -100,7 +100,7 @@ function refreshAll() {
 <template>
   <div class="bg-hero-gradient">
     <div class="mx-auto max-w-5xl p-4 md:p-8">
-    <header class="mb-6 hidden flex-wrap items-center justify-between gap-3 md:flex">
+    <header v-if="mobileTab !== 'settings'" class="mb-6 hidden flex-wrap items-center justify-between gap-3 md:flex">
       <h1 class="text-h2 flex items-center gap-2 border-none pb-0">
         <span class="bg-brand-gradient shadow-soft flex size-10 items-center justify-center rounded-2xl">
           <Wallet class="text-primary-foreground size-5" />
@@ -121,7 +121,7 @@ function refreshAll() {
           {{ t('dashboard.addManually') }}
         </button>
         <NuxtLink
-          to="/settings"
+          :to="{ path: '/', query: { tab: 'settings' } }"
           class="text-muted-foreground hover:text-foreground hover:bg-accent flex size-9 items-center justify-center rounded-full transition-colors"
           :title="t('settings.title')"
         >
@@ -130,7 +130,11 @@ function refreshAll() {
       </div>
     </header>
 
-    <div class="space-y-6 pb-20 md:pb-0">
+    <div v-if="mobileTab === 'settings'" class="pb-20 md:pb-0">
+      <DashboardSettingsPanel />
+    </div>
+
+    <div v-else class="space-y-6 pb-20 md:pb-0">
       <div :class="{ 'hidden md:block': mobileTab !== 'home' }" class="space-y-6">
         <DashboardBalanceCards ref="balanceCardsRef" :profile-id="profileId" />
 

@@ -5,7 +5,7 @@ import { Home, ListChecks, PieChart, Settings, Plus } from '@lucide/vue'
 const { t } = useI18n()
 const route = useRoute()
 
-const activeTab = computed(() => (route.path === '/' ? ((route.query.tab as string) ?? 'home') : ''))
+const activeTab = computed(() => (route.query.tab as string) ?? 'home')
 
 const leftItems = computed(() => [
   { key: 'home' as const, label: t('nav.home'), icon: Home, to: { path: '/' } },
@@ -72,9 +72,9 @@ const rightItems = computed(() => [
     <Tooltip>
       <TooltipTrigger as-child>
         <NuxtLink
-          to="/settings"
+          :to="{ path: '/', query: { tab: 'settings' } }"
           class="mx-1 flex flex-col items-center gap-0.5 rounded-2xl py-2 transition-colors"
-          :class="route.path === '/settings' ? 'text-primary bg-primary/10' : 'text-muted-foreground hover:text-foreground'"
+          :class="activeTab === 'settings' ? 'text-primary bg-primary/10' : 'text-muted-foreground hover:text-foreground'"
         >
           <Settings class="size-5" />
           <span class="text-caption">{{ t('settings.title') }}</span>
