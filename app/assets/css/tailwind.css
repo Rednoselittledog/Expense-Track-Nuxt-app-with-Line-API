@@ -1,0 +1,262 @@
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  --font-heading: var(--font-sans);
+  --color-success-foreground: var(--success-foreground);
+  --color-success: var(--success);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-warning: var(--warning);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --color-foreground: var(--foreground);
+  --color-background: var(--background);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+}
+
+:root {
+  --radius: 0.9rem;
+  --background: #f9f9f7;
+  --foreground: oklch(0.141 0.005 285.823);
+  --card: #fcfcfb;
+  --card-foreground: oklch(0.141 0.005 285.823);
+  --popover: #fcfcfb;
+  --popover-foreground: oklch(0.141 0.005 285.823);
+  --primary: #c9541f;
+  --primary-foreground: #ffffff;
+  --secondary: oklch(0.967 0.001 286.375);
+  --secondary-foreground: oklch(0.21 0.006 285.885);
+  --muted: oklch(0.967 0.001 286.375);
+  --muted-foreground: oklch(0.552 0.016 285.938);
+  --accent: oklch(0.967 0.001 286.375);
+  --accent-foreground: oklch(0.21 0.006 285.885);
+  --destructive: oklch(0.577 0.245 27.325);
+  --success: oklch(0.627 0.194 149.214);
+  --success-foreground: oklch(0.985 0 0);
+  --warning: oklch(0.769 0.188 70.08);
+  --warning-foreground: oklch(0.141 0.005 285.823);
+  --border: oklch(0.92 0.004 286.32);
+  --input: oklch(0.92 0.004 286.32);
+  --ring: #e0895a;
+  /* categorical: orange(primary)/aqua/blue/magenta/yellow — validated with the dataviz skill's
+     validate_palette.js (adjacent CVD/lightness/chroma/contrast all PASS in both modes) */
+  --chart-1: #c9541f;
+  --chart-2: #1baf7a;
+  --chart-3: #2a78d6;
+  --chart-4: #e87ba4;
+  --chart-5: #eda100;
+  --sidebar: oklch(0.985 0 0);
+  --sidebar-foreground: oklch(0.141 0.005 285.823);
+  --sidebar-primary: oklch(0.21 0.006 285.885);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.967 0.001 286.375);
+  --sidebar-accent-foreground: oklch(0.21 0.006 285.885);
+  --sidebar-border: oklch(0.92 0.004 286.32);
+  --sidebar-ring: oklch(0.705 0.015 286.067);
+}
+
+.dark {
+  --background: #1a1a19;
+  --foreground: oklch(0.985 0 0);
+  --card: #242422;
+  --card-foreground: oklch(0.985 0 0);
+  --popover: #242422;
+  --popover-foreground: oklch(0.985 0 0);
+  --primary: #d95926;
+  --primary-foreground: #ffffff;
+  --secondary: oklch(0.274 0.006 286.033);
+  --secondary-foreground: oklch(0.985 0 0);
+  --muted: oklch(0.274 0.006 286.033);
+  --muted-foreground: oklch(0.705 0.015 286.067);
+  --accent: oklch(0.274 0.006 286.033);
+  --accent-foreground: oklch(0.985 0 0);
+  --destructive: oklch(0.704 0.191 22.216);
+  --success: oklch(0.696 0.17 149.214);
+  --success-foreground: oklch(0.141 0.005 285.823);
+  --warning: oklch(0.828 0.189 84.429);
+  --warning-foreground: oklch(0.141 0.005 285.823);
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 15%);
+  --ring: #e8794a;
+  --chart-1: #d95926;
+  --chart-2: #199e70;
+  --chart-3: #3987e5;
+  --chart-4: #d55181;
+  --chart-5: #c98500;
+  --sidebar: oklch(0.21 0.006 285.885);
+  --sidebar-foreground: oklch(0.985 0 0);
+  --sidebar-primary: oklch(0.488 0.243 264.376);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.274 0.006 286.033);
+  --sidebar-accent-foreground: oklch(0.985 0 0);
+  --sidebar-border: oklch(1 0 0 / 10%);
+  --sidebar-ring: oklch(0.552 0.016 285.938);
+}
+
+/* accent palettes — swap --primary/--ring only. --chart-1..5 stay fixed at the
+   original validated categorical set no matter the palette: several accent hues
+   (forest=green, ocean=blue, berry=pink, amber=gold) intentionally echo one of
+   the fixed chart-2..5 hues, so letting --chart-1 follow the palette made the
+   category pie chart's biggest slice visually collide with another category
+   whenever their hues matched (e.g. forest's green primary vs chart-2's teal-green) */
+[data-palette='sunset'] { --primary: #c9541f; --ring: #e0895a; }
+.dark[data-palette='sunset'] { --primary: #d95926; --ring: #e8794a; }
+
+[data-palette='forest'] { --primary: #1f8a4c; --ring: #6cc28c; }
+.dark[data-palette='forest'] { --primary: #279456; --ring: #5ec98a; }
+
+[data-palette='ocean'] { --primary: #1f6fc9; --ring: #7bb0e8; }
+.dark[data-palette='ocean'] { --primary: #3380db; --ring: #6fa3e0; }
+
+[data-palette='grape'] { --primary: #7c3fc9; --ring: #b98ff0; }
+.dark[data-palette='grape'] { --primary: #9a5ce0; --ring: #b48ce8; }
+
+[data-palette='berry'] { --primary: #c9317a; --ring: #eb92bc; }
+.dark[data-palette='berry'] { --primary: #d9468a; --ring: #e88fb8; }
+
+[data-palette='amber'] { --primary: #a6660a; --ring: #e0ab52; }
+.dark[data-palette='amber'] { --primary: #b87708; --ring: #d9a355; }
+
+@utility text-h1 {
+  @apply scroll-m-20 text-4xl font-extrabold tracking-tight;
+}
+
+@utility text-h2 {
+  @apply scroll-m-20 border-b pb-2 text-3xl font-semibold tracking-tight first:mt-0;
+}
+
+@utility text-h3 {
+  @apply scroll-m-20 text-2xl font-semibold tracking-tight;
+}
+
+@utility text-h4 {
+  @apply scroll-m-20 text-xl font-semibold tracking-tight;
+}
+
+@utility text-body {
+  @apply leading-7 [&:not(:first-child)]:mt-6;
+}
+
+@utility text-lead {
+  @apply text-xl text-muted-foreground;
+}
+
+@utility text-large {
+  @apply text-lg font-semibold;
+}
+
+@utility text-small {
+  @apply text-sm font-medium leading-none;
+}
+
+@utility text-caption {
+  @apply text-sm text-muted-foreground;
+}
+
+@utility text-alert {
+  @apply text-sm font-medium text-warning;
+}
+
+@utility text-amount-lg {
+  @apply text-3xl font-bold tabular-nums;
+}
+
+@utility text-amount-sm {
+  @apply text-sm font-semibold tabular-nums;
+}
+
+@utility text-eyebrow {
+  @apply text-xs font-semibold tracking-wide text-muted-foreground uppercase;
+}
+
+@utility animate-enter {
+  @apply animate-in fade-in slide-in-from-bottom-2 duration-300 ease-out fill-mode-backwards;
+}
+
+@utility animate-enter-scale {
+  @apply animate-in fade-in zoom-in-95 duration-300 ease-out fill-mode-backwards;
+}
+
+@utility shadow-soft {
+  box-shadow:
+    0 1px 2px color-mix(in oklch, var(--foreground) 4%, transparent),
+    0 8px 24px -12px color-mix(in oklch, var(--primary) 25%, transparent);
+}
+
+@utility shadow-soft-lg {
+  box-shadow:
+    0 2px 4px color-mix(in oklch, var(--foreground) 5%, transparent),
+    0 16px 40px -16px color-mix(in oklch, var(--primary) 30%, transparent);
+}
+
+@utility bg-hero-gradient {
+  background-image:
+    radial-gradient(ellipse 120% 100% at 100% -20%, color-mix(in oklch, var(--primary) 20%, transparent), transparent 60%),
+    radial-gradient(ellipse 100% 80% at -10% 120%, color-mix(in oklch, var(--chart-3) 12%, transparent), transparent 60%);
+}
+
+@utility bg-brand-gradient {
+  background-image: linear-gradient(135deg, var(--primary), color-mix(in oklch, var(--primary) 55%, var(--chart-3)));
+}
+
+@utility glass-panel {
+  background-color: color-mix(in oklch, var(--background) 75%, transparent);
+  backdrop-filter: blur(16px) saturate(160%);
+  -webkit-backdrop-filter: blur(16px) saturate(160%);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground font-sans;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-delay: 0s !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}

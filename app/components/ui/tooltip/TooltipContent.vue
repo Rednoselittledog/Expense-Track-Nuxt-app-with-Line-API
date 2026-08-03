@@ -1,0 +1,32 @@
+<script setup lang="ts">
+import type { TooltipContentEmits, TooltipContentProps } from 'reka-ui'
+import type { HTMLAttributes } from 'vue'
+import { TooltipContent, TooltipPortal, useForwardPropsEmits } from 'reka-ui'
+import { reactiveOmit } from '@vueuse/core'
+import { cn } from '@/lib/utils'
+
+const props = withDefaults(defineProps<TooltipContentProps & { class?: HTMLAttributes['class'] }>(), {
+  sideOffset: 4
+})
+const emits = defineEmits<TooltipContentEmits>()
+
+const delegatedProps = reactiveOmit(props, 'class')
+const forwarded = useForwardPropsEmits(delegatedProps, emits)
+</script>
+
+<template>
+  <TooltipPortal>
+    <TooltipContent
+      data-slot="tooltip-content"
+      v-bind="forwarded"
+      :class="
+        cn(
+          'bg-primary text-primary-foreground animate-in fade-in-0 zoom-in-95 z-50 w-fit rounded-md px-3 py-1.5 text-xs text-balance',
+          props.class
+        )
+      "
+    >
+      <slot />
+    </TooltipContent>
+  </TooltipPortal>
+</template>
