@@ -17,7 +17,7 @@ export async function callGroq(messages: GroqMessage[]) {
         Authorization: `Bearer ${config.groqApiKey}`
       },
       body: {
-        model: 'llama-3.3-70b-versatile',
+        model: 'openai/gpt-oss-120b',
         messages,
         response_format: { type: 'json_object' },
         temperature: 0.2
