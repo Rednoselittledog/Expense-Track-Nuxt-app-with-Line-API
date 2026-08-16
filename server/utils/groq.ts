@@ -24,5 +24,7 @@ export async function callGroq(messages: GroqMessage[]) {
       }
     }
   )
-  return response.choices[0].message.content
+  const content = response.choices[0]?.message.content
+  if (!content) throw new Error('Groq response missing content')
+  return content
 }
