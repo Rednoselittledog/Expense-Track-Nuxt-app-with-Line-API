@@ -11,6 +11,7 @@ import { Minus, Plus, X } from '@lucide/vue'
 const props = defineProps<{
   modelValue: LedgerRow[]
   categories: CategoryContext[]
+  single?: boolean
 }>()
 
 const emit = defineEmits<{ 'update:modelValue': [LedgerRow[]] }>()
@@ -140,7 +141,7 @@ function addRow() {
           <TableHead class="w-36">{{ t('ledger.columnAmount') }}</TableHead>
           <TableHead class="w-48">{{ t('ledger.columnCategory') }}</TableHead>
           <TableHead class="w-40">{{ t('ledger.columnFund') }}</TableHead>
-          <TableHead class="w-10" />
+          <TableHead v-if="!single" class="w-10" />
         </TableRow>
       </TableHeader>
       <TableBody>
@@ -270,7 +271,7 @@ function addRow() {
               </label>
             </div>
           </TableCell>
-          <TableCell>
+          <TableCell v-if="!single">
             <Button variant="ghost" size="icon" :aria-label="t('ledger.removeRow')" @click="removeRow(index)">
               <X class="size-4" />
             </Button>
@@ -283,6 +284,6 @@ function addRow() {
       {{ t('ledger.allocationMismatch') }}
     </p>
 
-    <Button variant="link" class="mt-2 px-0" @click="addRow">{{ t('ledger.addRow') }}</Button>
+    <Button v-if="!single" variant="link" class="mt-2 px-0" @click="addRow">{{ t('ledger.addRow') }}</Button>
   </div>
 </template>

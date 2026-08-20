@@ -6,11 +6,15 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { Skeleton } from '@/components/ui/skeleton'
-import { ListChecks, ChevronLeft, ChevronRight, Download } from '@lucide/vue'
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { ListChecks, ChevronLeft, ChevronRight, Download, Pencil, Trash2 } from '@lucide/vue'
+import { toast } from 'vue-sonner'
 
 const props = defineProps<{
   profileId: string
 }>()
+
+const emit = defineEmits<{ edit: [TransactionRow] }>()
 
 const { t, locale } = useI18n()
 
@@ -72,6 +76,31 @@ function categoryLabel(tx: TransactionRow) {
   if (tx.categories) return tx.categories.name
   if (tx.is_transfer) return t('dashboard.transfer')
   return '—'
+}
+
+const deleteTarget = ref<TransactionRow | null>(null)
+const deleting = ref(false)
+
+function requestDelete(tx: TransactionRow) {
+  deleteTarget.value = tx
+}
+
+async function confirmDelete() {
+  if (!deleteTarget.value) return
+  deleting.value = true
+  try {
+    await $fetch(`/api/transactions/${deleteTarget.value.id}`, {
+      method: 'DELETE',
+      query: { profileId: props.profileId }
+    })
+    deleteTarget.value = null
+    toast.success(t('toast.deleted'))
+    refresh()
+  } catch (e) {
+    toast.error(extractErrorMessage(e))
+  } finally {
+    deleting.value = false
+  }
 }
 
 defineExpose({ refresh })
@@ -144,6 +173,7 @@ defineExpose({ refresh })
                 <TableHead>{{ t('ledger.columnAmount') }}</TableHead>
                 <TableHead>{{ t('ledger.columnCategory') }}</TableHead>
                 <TableHead>{{ t('ledger.columnFund') }}</TableHead>
+                <TableHead class="w-20" />
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -165,9 +195,19 @@ defineExpose({ refresh })
                     </Badge>
                   </div>
                 </TableCell>
+                <TableCell>
+                  <div v-if="!tx.is_transfer" class="flex justify-end gap-1">
+                    <Button variant="ghost" size="icon" :aria-label="t('actions.edit')" @click="emit('edit', tx)">
+                      <Pencil class="size-4" />
+                    </Button>
+                    <Button variant="ghost" size="icon" :aria-label="t('actions.delete')" @click="requestDelete(tx)">
+                      <Trash2 class="size-4" />
+                    </Button>
+                  </div>
+                </TableCell>
               </TableRow>
               <TableRow v-if="transactions.length === 0">
-                <TableCell colspan="5" class="text-caption text-center">{{ t('dashboard.noTransactions') }}</TableCell>
+                <TableCell colspan="6" class="text-caption text-center">{{ t('dashboard.noTransactions') }}</TableCell>
               </TableRow>
             </TableBody>
           </Table>
@@ -188,11 +228,21 @@ defineExpose({ refresh })
                     {{ tx.type === 'income' ? '+' : '−' }}฿{{ formatAmount(tx.amount) }}
                   </span>
                 </div>
-                <div class="mt-1 flex items-center gap-1">
-                  <span class="text-caption">{{ categoryLabel(tx) }}</span>
-                  <Badge v-for="alloc in tx.transaction_allocations" :key="alloc.fund" variant="secondary">
-                    {{ fundLabel(alloc.fund) }}
-                  </Badge>
+                <div class="mt-1 flex items-center justify-between gap-1">
+                  <div class="flex flex-wrap items-center gap-1">
+                    <span class="text-caption">{{ categoryLabel(tx) }}</span>
+                    <Badge v-for="alloc in tx.transaction_allocations" :key="alloc.fund" variant="secondary">
+                      {{ fundLabel(alloc.fund) }}
+                    </Badge>
+                  </div>
+                  <div v-if="!tx.is_transfer" class="flex shrink-0 gap-1">
+                    <Button variant="ghost" size="icon" :aria-label="t('actions.edit')" @click="emit('edit', tx)">
+                      <Pencil class="size-4" />
+                    </Button>
+                    <Button variant="ghost" size="icon" :aria-label="t('actions.delete')" @click="requestDelete(tx)">
+                      <Trash2 class="size-4" />
+                    </Button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -201,5 +251,20 @@ defineExpose({ refresh })
         </div>
       </template>
     </CardContent>
+
+    <Dialog :open="!!deleteTarget" @update:open="(v: boolean) => { if (!v) deleteTarget = null }">
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>{{ t('ledger.deleteConfirmTitle') }}</DialogTitle>
+        </DialogHeader>
+        <p class="text-small">{{ t('ledger.deleteConfirmBody') }}</p>
+        <DialogFooter>
+          <Button variant="outline" :disabled="deleting" @click="deleteTarget = null">{{ t('actions.cancel') }}</Button>
+          <Button variant="destructive" :disabled="deleting" :loading="deleting" @click="confirmDelete">
+            {{ t('actions.delete') }}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   </Card>
 </template>

@@ -10,10 +10,15 @@
     "save": "บันทึก",
     "saving": "กำลังบันทึก...",
     "rechecking": "กำลังตรวจสอบ...",
-    "recheck": "ตรวจสอบอีกครั้ง"
+    "recheck": "ตรวจสอบอีกครั้ง",
+    "edit": "แก้ไข",
+    "delete": "ลบ"
   },
   "ledger": {
     "confirmTitle": "ตรวจสอบรายการ ({count})",
+    "editTitle": "แก้ไขรายการ",
+    "deleteConfirmTitle": "ยืนยันการลบรายการ",
+    "deleteConfirmBody": "การดำเนินการนี้จะลบรายการนี้อย่างถาวร กู้คืนไม่ได้",
     "correctionPlaceholder": "พิมพ์แก้ไขเพิ่มเติม (ถ้ามี)... เช่น \"อันแรกผิด ต้องเป็น 80\"",
     "columnDate": "วันที่",
     "columnDescription": "รายการ",
@@ -110,6 +115,7 @@
   },
   "toast": {
     "saved": "บันทึกแล้ว",
+    "deleted": "ลบรายการแล้ว",
     "categoryCreated": "สร้างหมวดหมู่ย่อยใหม่: {name}",
     "resetDone": "รีเซ็ตฐานข้อมูลแล้ว (ลบ {count} รายการ)"
   }

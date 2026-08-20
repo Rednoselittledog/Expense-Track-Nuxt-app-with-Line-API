@@ -10,10 +10,15 @@
     "save": "Save",
     "saving": "Saving...",
     "rechecking": "Checking...",
-    "recheck": "Recheck"
+    "recheck": "Recheck",
+    "edit": "Edit",
+    "delete": "Delete"
   },
   "ledger": {
     "confirmTitle": "Review items ({count})",
+    "editTitle": "Edit transaction",
+    "deleteConfirmTitle": "Confirm delete",
+    "deleteConfirmBody": "This will permanently delete this transaction. This cannot be undone.",
     "correctionPlaceholder": "Type a correction (optional)... e.g. \"the first one is wrong, it should be 80\"",
     "columnDate": "Date",
     "columnDescription": "Description",
@@ -110,6 +115,7 @@
   },
   "toast": {
     "saved": "Saved",
+    "deleted": "Transaction deleted",
     "categoryCreated": "Created new sub-category: {name}",
     "resetDone": "Database reset ({count} transactions deleted)"
   }

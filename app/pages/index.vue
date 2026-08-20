@@ -31,6 +31,33 @@ const parsing = ref(false)
 const confirmDialogOpen = ref(false)
 const draftItems = ref<any[]>([])
 const addDialogOpen = ref(false)
+const editingId = ref<string | null>(null)
+
+interface EditableTransaction {
+  id: string
+  type: 'expense' | 'income'
+  amount: number
+  description: string
+  occurred_on: string
+  categories: { name: string; parent_id: string | null } | null
+  transaction_allocations: { fund: 'daily' | 'fixed' | 'savings'; amount: number }[]
+}
+
+function openEdit(tx: EditableTransaction) {
+  const major = rawCategories.value?.find((c) => c.id === tx.categories?.parent_id)?.name ?? ''
+  draftItems.value = [
+    {
+      type: tx.type,
+      amount: tx.amount,
+      description: tx.description,
+      occurred_on: tx.occurred_on,
+      category: tx.categories ? { major, sub: tx.categories.name } : null,
+      allocations: tx.transaction_allocations.map((a) => ({ fund: a.fund, amount: a.amount }))
+    }
+  ]
+  editingId.value = tx.id
+  confirmDialogOpen.value = true
+}
 
 async function runParse(text: string) {
   if (!text.trim()) return
@@ -41,6 +68,7 @@ async function runParse(text: string) {
       body: { profileId: profileId.value, text }
     })
     draftItems.value = result.items
+    editingId.value = null
     addDialogOpen.value = false
     confirmDialogOpen.value = true
   } catch (e) {
@@ -52,6 +80,7 @@ async function runParse(text: string) {
 
 function openManualAdd() {
   draftItems.value = []
+  editingId.value = null
   addDialogOpen.value = false
   confirmDialogOpen.value = true
 }
@@ -177,7 +206,7 @@ function refreshAll() {
       </div>
 
       <div :class="{ 'hidden md:block': mobileTab !== 'transactions' }">
-        <DashboardTransactionList ref="transactionListRef" :profile-id="profileId" />
+        <DashboardTransactionList ref="transactionListRef" :profile-id="profileId" @edit="openEdit" />
       </div>
 
       <div :class="{ 'hidden md:block': mobileTab !== 'categories' }">
@@ -194,6 +223,7 @@ function refreshAll() {
       :initial-items="draftItems"
       :profile-id="profileId"
       :categories="categories"
+      :editing-id="editingId"
       @saved="refreshAll"
     />
 

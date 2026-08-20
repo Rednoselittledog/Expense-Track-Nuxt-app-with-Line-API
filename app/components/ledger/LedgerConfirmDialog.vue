@@ -14,6 +14,7 @@ const props = defineProps<{
   initialItems: DraftItem[]
   profileId: string
   categories: CategoryContext[]
+  editingId?: string | null
 }>()
 
 const emit = defineEmits<{
@@ -74,13 +75,15 @@ async function confirmSave() {
   saving.value = true
   errorMessage.value = ''
   try {
-    const result = await $fetch<{ insertedIds: string[]; createdCategories: string[] }>('/api/transactions', {
-      method: 'POST',
-      body: {
-        profileId: props.profileId,
-        items: rows.value.map(stripId)
-      }
-    })
+    const result = props.editingId
+      ? await $fetch<{ updated: true; createdCategories: string[] }>(`/api/transactions/${props.editingId}`, {
+          method: 'PATCH',
+          body: { profileId: props.profileId, item: stripId(rows.value[0]!) }
+        })
+      : await $fetch<{ insertedIds: string[]; createdCategories: string[] }>('/api/transactions', {
+          method: 'POST',
+          body: { profileId: props.profileId, items: rows.value.map(stripId) }
+        })
     emit('update:open', false)
     emit('saved')
     toast.success(t('toast.saved'))
@@ -121,13 +124,14 @@ function preventCloseWhileBusy(e: Event) {
           <span class="bg-primary/12 text-primary flex size-8 items-center justify-center rounded-xl">
             <ListChecks class="size-4" />
           </span>
-          {{ t('ledger.confirmTitle', { count: rows.length }) }}
+          {{ editingId ? t('ledger.editTitle') : t('ledger.confirmTitle', { count: rows.length }) }}
         </DialogTitle>
       </DialogHeader>
 
-      <LedgerEditor v-model="rows" :categories="categories" />
+      <LedgerEditor v-model="rows" :categories="categories" :single="!!editingId" />
 
       <Input
+        v-if="!editingId"
         v-model="correctionText"
         :placeholder="t('ledger.correctionPlaceholder')"
         class="border-dashed"
@@ -145,7 +149,9 @@ function preventCloseWhileBusy(e: Event) {
                 ? t('actions.saving')
                 : hasCorrection
                   ? t('actions.recheck')
-                  : t('actions.confirm')
+                  : editingId
+                    ? t('actions.save')
+                    : t('actions.confirm')
           }}
         </Button>
       </DialogFooter>
