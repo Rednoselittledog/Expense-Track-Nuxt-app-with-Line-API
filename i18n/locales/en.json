@@ -75,7 +75,13 @@
     "resetDatabaseCaption": "Permanently deletes all transactions (expenses/income/transfers). Settings, budgets, and categories are not affected.",
     "resetConfirmTitle": "Confirm database reset",
     "resetConfirmBody": "This will permanently delete every transaction. This cannot be undone. (Settings, budgets, and categories will not be deleted.)",
-    "resetConfirmButton": "Delete everything"
+    "resetConfirmButton": "Delete everything",
+    "vocabularyTitle": "AI reference vocabulary",
+    "vocabularyCaption": "Previously used descriptions, given to the AI as examples so new entries reuse the same wording consistently. Editable — separate each entry with a comma (,).",
+    "vocabularyPlaceholder": "e.g. Chicken rice, Coffee, Gas",
+    "vocabularyRefresh": "Refresh from history",
+    "vocabularyUpdatedAt": "Last updated: {date}",
+    "vocabularyNeverUpdated": "Never refreshed yet"
   },
   "dashboard": {
     "title": "Daily Budget Tracker",
@@ -117,6 +123,7 @@
     "saved": "Saved",
     "deleted": "Transaction deleted",
     "categoryCreated": "Created new sub-category: {name}",
-    "resetDone": "Database reset ({count} transactions deleted)"
+    "resetDone": "Database reset ({count} transactions deleted)",
+    "vocabularyRefreshed": "Vocabulary refreshed"
   }
 }

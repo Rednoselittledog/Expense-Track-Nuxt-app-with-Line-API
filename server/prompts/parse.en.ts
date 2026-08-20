@@ -1,6 +1,12 @@
 import type { CategoryContext } from '../utils/types'
 
-export function buildParsePrompt(today: string, categories: CategoryContext[]) {
+// no-op for English locale — the Thai variant's reminder exists to stop the model
+// translating Thai input to English; that failure mode doesn't apply here
+export function buildUserReminder() {
+  return ''
+}
+
+export function buildParsePrompt(today: string, categories: CategoryContext[], recentDescriptions: string[] = []) {
   return `Today's date is ${today} (YYYY-MM-DD format).
 You are an assistant that extracts money line items from free-form English text the user typed. Reply with JSON matching the given structure only. No text outside the JSON.
 
@@ -9,6 +15,7 @@ ${categories.map((c) => `- ${c.major}`).join('\n')}
 
 Existing sub-categories under each major (reuse one if it fits, otherwise you may invent a new sub-category name):
 ${categories.map((c) => `- ${c.major}: ${c.subs.join(', ') || '(no sub-categories yet)'}`).join('\n')}
+${recentDescriptions.length > 0 ? `\nDescriptions used before (if the new item matches or is close to one of these, reuse the exact same wording — don't invent new phrasing):\n${recentDescriptions.map((d) => `- ${d}`).join('\n')}\n` : ''}
 
 JSON structure to return (never rename the keys):
 {

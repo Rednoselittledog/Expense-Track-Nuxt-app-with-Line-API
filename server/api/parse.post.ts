@@ -1,6 +1,6 @@
 import { z } from 'zod'
-import { buildParsePrompt as buildParsePromptTh } from '../prompts/parse.th'
-import { buildParsePrompt as buildParsePromptEn } from '../prompts/parse.en'
+import { buildParsePrompt as buildParsePromptTh, buildUserReminder as buildUserReminderTh } from '../prompts/parse.th'
+import { buildParsePrompt as buildParsePromptEn, buildUserReminder as buildUserReminderEn } from '../prompts/parse.en'
 import { transactionDraftSchema, type CategoryContext } from '../utils/types'
 
 const requestSchema = z.object({
@@ -20,12 +20,17 @@ export default defineEventHandler(async (event) => {
 
   const { data: profile, error: profileError } = await supabase
     .from('profiles')
-    .select('locale')
+    .select('locale, description_vocabulary')
     .eq('id', body.profileId)
     .single()
   if (profileError || !profile) {
     throw createError({ statusCode: 404, statusMessage: 'profile not found' })
   }
+
+  const recentDescriptions = profile.description_vocabulary
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean)
 
   const { data: rawCategories, error: categoriesError } = await supabase
     .from('categories')
@@ -43,15 +48,17 @@ export default defineEventHandler(async (event) => {
   }))
 
   const today = todayInTimezone()
-  const buildParsePrompt = profile.locale === 'en' ? buildParsePromptEn : buildParsePromptTh
-  const systemPrompt = buildParsePrompt(today, categories)
+  const isEn = profile.locale === 'en'
+  const buildParsePrompt = isEn ? buildParsePromptEn : buildParsePromptTh
+  const systemPrompt = buildParsePrompt(today, categories, recentDescriptions)
+  const userReminder = isEn ? buildUserReminderEn() : buildUserReminderTh()
 
   const messages = [
     { role: 'system' as const, content: systemPrompt },
     ...(body.previousItems?.length
       ? [{ role: 'assistant' as const, content: JSON.stringify({ items: body.previousItems }) }]
       : []),
-    { role: 'user' as const, content: body.text }
+    { role: 'user' as const, content: body.text + userReminder }
   ]
 
   const rawContent = await callGroq(messages)

@@ -3,7 +3,8 @@ import { z } from 'zod'
 const requestSchema = z.object({
   profileId: z.string().min(1),
   locale: z.enum(['th', 'en']).optional(),
-  cycle_start_day: z.number().int().min(1).max(28).optional()
+  cycle_start_day: z.number().int().min(1).max(28).optional(),
+  description_vocabulary: z.string().optional()
 })
 
 export default defineEventHandler(async (event) => {

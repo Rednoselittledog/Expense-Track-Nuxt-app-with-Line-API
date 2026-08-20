@@ -7,9 +7,9 @@ import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Skeleton } from '@/components/ui/skeleton'
 import { toast } from 'vue-sonner'
-import { SlidersHorizontal, Wallet, Check, TriangleAlert } from '@lucide/vue'
+import { SlidersHorizontal, Wallet, Check, TriangleAlert, Tags } from '@lucide/vue'
 
-const { t, setLocale } = useI18n()
+const { t, locale: uiLocale, setLocale } = useI18n()
 const colorMode = useColorMode()
 const palette = usePalette()
 
@@ -38,6 +38,9 @@ const fixedAmount = ref(0)
 const fixedCurrentAmount = ref(0)
 const budgetEffective = ref<'now' | 'next_cycle'>('now')
 const saving = ref(false)
+const descriptionVocabulary = ref('')
+const descriptionVocabularyUpdatedAt = ref<string | null>(null)
+const refreshingVocabulary = ref(false)
 
 const activeAmount = computed({
   get: () => (budgetFund.value === 'daily' ? dailyAmount.value : fixedAmount.value),
@@ -52,6 +55,8 @@ watchEffect(() => {
   if (profile.value) {
     locale.value = profile.value.locale
     cycleStartDay.value = profile.value.cycle_start_day
+    descriptionVocabulary.value = profile.value.description_vocabulary
+    descriptionVocabularyUpdatedAt.value = profile.value.description_vocabulary_updated_at
   }
   if (dailySummary.value) {
     dailyAmount.value = dailySummary.value.monthlyAmount
@@ -74,7 +79,12 @@ async function confirmSave() {
   try {
     await $fetch('/api/profile', {
       method: 'PATCH',
-      body: { profileId: profileId.value, locale: locale.value, cycle_start_day: cycleStartDay.value }
+      body: {
+        profileId: profileId.value,
+        locale: locale.value,
+        cycle_start_day: cycleStartDay.value,
+        description_vocabulary: descriptionVocabulary.value
+      }
     })
     if (dailyAmount.value !== dailyCurrentAmount.value) {
       await $fetch('/api/budget-rates', {
@@ -131,6 +141,29 @@ async function confirmReset() {
 
 function preventCloseWhileResetting(e: Event) {
   if (resetting.value) e.preventDefault()
+}
+
+function formatUpdatedAt(iso: string) {
+  return new Intl.DateTimeFormat(uiLocale.value === 'th' ? 'th-TH' : 'en-US', { dateStyle: 'short', timeStyle: 'short' }).format(
+    new Date(iso)
+  )
+}
+
+async function refreshVocabulary() {
+  refreshingVocabulary.value = true
+  try {
+    const result = await $fetch<{ description_vocabulary: string }>('/api/vocabulary/refresh', {
+      method: 'POST',
+      body: { profileId: profileId.value }
+    })
+    descriptionVocabulary.value = result.description_vocabulary
+    descriptionVocabularyUpdatedAt.value = new Date().toISOString()
+    toast.success(t('toast.vocabularyRefreshed'))
+  } catch (e) {
+    toast.error(extractErrorMessage(e))
+  } finally {
+    refreshingVocabulary.value = false
+  }
 }
 </script>
 
@@ -271,6 +304,36 @@ function preventCloseWhileResetting(e: Event) {
         </CardContent>
       </Card>
     </div>
+
+    <Card class="animate-enter mt-4" style="animation-delay: 90ms">
+      <CardHeader>
+        <CardTitle class="text-eyebrow flex items-center gap-1.5">
+          <Tags class="size-3.5" />
+          {{ t('settings.vocabularyTitle') }}
+        </CardTitle>
+      </CardHeader>
+      <CardContent class="space-y-3">
+        <p class="text-caption">{{ t('settings.vocabularyCaption') }}</p>
+        <textarea
+          v-model="descriptionVocabulary"
+          :placeholder="t('settings.vocabularyPlaceholder')"
+          rows="3"
+          class="border-input placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-ring/50 dark:bg-input/30 w-full rounded-md border bg-transparent px-3 py-2 text-sm shadow-xs transition-[color,box-shadow] outline-none focus-visible:ring-3 md:text-sm"
+        />
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <p class="text-caption">
+            {{
+              descriptionVocabularyUpdatedAt
+                ? t('settings.vocabularyUpdatedAt', { date: formatUpdatedAt(descriptionVocabularyUpdatedAt) })
+                : t('settings.vocabularyNeverUpdated')
+            }}
+          </p>
+          <Button variant="outline" size="sm" :disabled="refreshingVocabulary" :loading="refreshingVocabulary" @click="refreshVocabulary">
+            {{ t('settings.vocabularyRefresh') }}
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
 
     <div class="mt-4 flex flex-col gap-2 sm:flex-row sm:justify-end">
       <Button variant="outline" as-child class="flex-1 sm:w-32 sm:flex-none">

@@ -5,6 +5,8 @@ create table profiles (
   line_user_id text unique,
   locale text not null default 'th' check (locale in ('th', 'en')),
   cycle_start_day int not null default 1 check (cycle_start_day between 1 and 28),
+  description_vocabulary text not null default '',
+  description_vocabulary_updated_at timestamptz,
   created_at timestamptz not null default now()
 );
 
