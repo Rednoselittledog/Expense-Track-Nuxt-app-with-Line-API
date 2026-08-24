@@ -8,6 +8,7 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '
 import { Skeleton } from '@/components/ui/skeleton'
 import { toast } from 'vue-sonner'
 import { SlidersHorizontal, Wallet, Check, TriangleAlert, Tags } from '@lucide/vue'
+import type { CalibrateInitialGroup } from '~/types/calibrate'
 
 const { t, locale: uiLocale, setLocale } = useI18n()
 const colorMode = useColorMode()
@@ -41,6 +42,9 @@ const saving = ref(false)
 const descriptionVocabulary = ref('')
 const descriptionVocabularyUpdatedAt = ref<string | null>(null)
 const refreshingVocabulary = ref(false)
+const calibrateDialogOpen = ref(false)
+const calibrateGroups = ref<CalibrateInitialGroup[]>([])
+const analyzing = ref(false)
 
 const activeAmount = computed({
   get: () => (budgetFund.value === 'daily' ? dailyAmount.value : fixedAmount.value),
@@ -147,6 +151,26 @@ function formatUpdatedAt(iso: string) {
   return new Intl.DateTimeFormat(uiLocale.value === 'th' ? 'th-TH' : 'en-US', { dateStyle: 'short', timeStyle: 'short' }).format(
     new Date(iso)
   )
+}
+
+async function openCalibrate() {
+  analyzing.value = true
+  try {
+    const result = await $fetch<{ groups: CalibrateInitialGroup[] }>('/api/calibrate/analyze', {
+      method: 'POST',
+      body: { profileId: profileId.value }
+    })
+    if (result.groups.length === 0) {
+      toast.info(t('settings.calibrateNoSuggestions'))
+      return
+    }
+    calibrateGroups.value = result.groups
+    calibrateDialogOpen.value = true
+  } catch (e) {
+    toast.error(extractErrorMessage(e))
+  } finally {
+    analyzing.value = false
+  }
 }
 
 async function refreshVocabulary() {
@@ -332,6 +356,13 @@ async function refreshVocabulary() {
             {{ t('settings.vocabularyRefresh') }}
           </Button>
         </div>
+
+        <div class="flex flex-wrap items-center justify-between gap-2 border-t pt-3">
+          <p class="text-caption max-w-xs">{{ t('settings.calibrateCaption') }}</p>
+          <Button variant="outline" size="sm" :disabled="analyzing" :loading="analyzing" @click="openCalibrate">
+            {{ t('settings.calibrateButton') }}
+          </Button>
+        </div>
       </CardContent>
     </Card>
 
@@ -378,5 +409,12 @@ async function refreshVocabulary() {
         </DialogFooter>
       </DialogContent>
     </Dialog>
+
+    <CalibrateDialog
+      v-model:open="calibrateDialogOpen"
+      :initial-groups="calibrateGroups"
+      :profile-id="profileId"
+      @saved="refreshVocabulary"
+    />
   </div>
 </template>

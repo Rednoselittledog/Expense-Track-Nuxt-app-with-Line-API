@@ -35,6 +35,18 @@
     "toggleToIncome": "รายจ่าย (กดเพื่อสลับเป็นรายรับ)",
     "toggleToExpense": "รายรับ (กดเพื่อสลับเป็นรายจ่าย)"
   },
+  "calibrate": {
+    "title": "จัดระเบียบชื่อรายการ",
+    "subtitle": "ตรวจสอบรายการที่ AI เสนอก่อนยืนยัน แก้ไขเองได้ หรือติ๊กแล้วพิมพ์คำแนะนำเพื่อให้ AI ลองใหม่",
+    "noSuggestions": "ไม่พบรายการที่ควรปรับตอนนี้",
+    "affectedCount": "{count} รายการ",
+    "removeOld": "ไม่ต้องเปลี่ยนรายการนี้",
+    "removeGroup": "ไม่ต้องเปลี่ยนกลุ่มนี้",
+    "recheckThis": "ส่งกลุ่มนี้ไป AI ใหม่",
+    "correctionPlaceholder": "พิมพ์คำแนะนำสำหรับกลุ่มที่ติ๊กไว้... เช่น \"เอาแบบสั้นกว่านี้\"",
+    "recheckButton": "ส่งที่ติ๊กไป AI ใหม่",
+    "confirmButton": "ยืนยันการเปลี่ยนแปลง ({count})"
+  },
   "transfer": {
     "title": "โยกเงินระหว่างบัญชี",
     "from": "จากกองทุน",
@@ -81,7 +93,10 @@
     "vocabularyPlaceholder": "เช่น ข้าวมันไก่, กาแฟ, ค่าน้ำมัน",
     "vocabularyRefresh": "รีเฟรชจากประวัติ",
     "vocabularyUpdatedAt": "อัปเดตล่าสุด: {date}",
-    "vocabularyNeverUpdated": "ยังไม่เคยรีเฟรช"
+    "vocabularyNeverUpdated": "ยังไม่เคยรีเฟรช",
+    "calibrateCaption": "ให้ AI ช่วยตรวจชื่อรายการที่ซ้ำซ้อน/สะกดไม่ตรงกัน แล้วรวมให้เป็นคำเดียวกันทั้งหมด",
+    "calibrateButton": "จัดระเบียบชื่อรายการ",
+    "calibrateNoSuggestions": "ไม่พบรายการที่ควรปรับตอนนี้"
   },
   "dashboard": {
     "title": "ระบบติดตามงบรายวัน",

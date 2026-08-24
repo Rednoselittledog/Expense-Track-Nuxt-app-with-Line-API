@@ -20,7 +20,7 @@ export default defineEventHandler(async (event) => {
 
   const { data: profile, error: profileError } = await supabase
     .from('profiles')
-    .select('locale, description_vocabulary')
+    .select('description_vocabulary')
     .eq('id', body.profileId)
     .single()
   if (profileError || !profile) {
@@ -48,17 +48,25 @@ export default defineEventHandler(async (event) => {
   }))
 
   const today = todayInTimezone()
-  const isEn = profile.locale === 'en'
+  // decide response language from what the user actually typed, not profiles.locale —
+  // locale drives UI/settings only and can drift out of sync with it (confirmed by user)
+  const isEn = !/[฀-๿]/.test(body.text)
   const buildParsePrompt = isEn ? buildParsePromptEn : buildParsePromptTh
   const systemPrompt = buildParsePrompt(today, categories, recentDescriptions)
   const userReminder = isEn ? buildUserReminderEn() : buildUserReminderTh()
+
+  // deterministic typo correction against the vocabulary — asking the model to fuzzy-match
+  // itself proved unreliable (confirmed: it dropped words instead of matching them), so
+  // correct it in code before it ever reaches Groq; falls through to the raw text untouched
+  // if nothing matches closely enough
+  const correctedText = fuzzyMatchDescription(body.text, recentDescriptions)
 
   const messages = [
     { role: 'system' as const, content: systemPrompt },
     ...(body.previousItems?.length
       ? [{ role: 'assistant' as const, content: JSON.stringify({ items: body.previousItems }) }]
       : []),
-    { role: 'user' as const, content: body.text + userReminder }
+    { role: 'user' as const, content: correctedText + userReminder }
   ]
 
   const rawContent = await callGroq(messages)

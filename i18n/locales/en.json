@@ -35,6 +35,18 @@
     "toggleToIncome": "Expense (click to switch to income)",
     "toggleToExpense": "Income (click to switch to expense)"
   },
+  "calibrate": {
+    "title": "Clean up item names",
+    "subtitle": "Review the AI's suggestions before confirming. Edit directly, or tick a group and type guidance to have the AI try again.",
+    "noSuggestions": "No cleanup suggestions right now",
+    "affectedCount": "{count} entries",
+    "removeOld": "Don't change this entry",
+    "removeGroup": "Don't change this group",
+    "recheckThis": "Send this group back to AI",
+    "correctionPlaceholder": "Type guidance for the ticked groups... e.g. \"make it shorter\"",
+    "recheckButton": "Send ticked to AI",
+    "confirmButton": "Confirm changes ({count})"
+  },
   "transfer": {
     "title": "Transfer between accounts",
     "from": "From fund",
@@ -81,7 +93,10 @@
     "vocabularyPlaceholder": "e.g. Chicken rice, Coffee, Gas",
     "vocabularyRefresh": "Refresh from history",
     "vocabularyUpdatedAt": "Last updated: {date}",
-    "vocabularyNeverUpdated": "Never refreshed yet"
+    "vocabularyNeverUpdated": "Never refreshed yet",
+    "calibrateCaption": "Let AI check for duplicate/inconsistent item names and merge them into one.",
+    "calibrateButton": "Clean up item names",
+    "calibrateNoSuggestions": "No cleanup suggestions right now"
   },
   "dashboard": {
     "title": "Daily Budget Tracker",
