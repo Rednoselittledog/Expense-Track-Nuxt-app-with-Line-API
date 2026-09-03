@@ -1,4 +1,46 @@
 import { z } from 'zod'
+import type { SupabaseClient } from '@supabase/supabase-js'
+
+const TOPUP_DESCRIPTION = 'เติมเงินต้นเดือน'
+
+// creates the cycle's budgeted amount as a real income transaction the first time it's viewed each
+// cycle, so it shows up in the ledger instead of being a purely virtual number from budget_rates
+// ponytail: no locking — a rare double-load race could insert it twice; add a unique constraint if that's ever seen
+async function ensureCycleTopUp(
+  supabase: SupabaseClient,
+  profileId: string,
+  fund: 'daily' | 'fixed',
+  cycleStart: string,
+  monthlyAmount: number
+) {
+  if (monthlyAmount <= 0) return
+  const { data: existing } = await supabase
+    .from('transactions')
+    .select('id, transaction_allocations!inner(fund)')
+    .eq('profile_id', profileId)
+    .eq('occurred_on', cycleStart)
+    .eq('description', TOPUP_DESCRIPTION)
+    .eq('transaction_allocations.fund', fund)
+    .maybeSingle()
+  if (existing) return
+
+  const { data: tx, error: txError } = await supabase
+    .from('transactions')
+    .insert({
+      profile_id: profileId,
+      category_id: null,
+      type: 'income',
+      amount: monthlyAmount,
+      description: TOPUP_DESCRIPTION,
+      occurred_on: cycleStart,
+      source: 'web'
+    })
+    .select('id')
+    .single()
+  if (txError || !tx) return
+
+  await supabase.from('transaction_allocations').insert({ transaction_id: tx.id, fund, amount: monthlyAmount })
+}
 
 const querySchema = z.object({
   profileId: z.string().min(1),
@@ -58,6 +100,7 @@ export default defineEventHandler(async (event) => {
       .limit(1)
       .maybeSingle()
     const monthlyAmount = rate?.monthly_amount ?? 0
+    await ensureCycleTopUp(supabase, profileId, 'daily', cycle.start, monthlyAmount)
 
     const { data: transactions, error: txError } = await supabase
       .from('transactions')
@@ -84,10 +127,11 @@ export default defineEventHandler(async (event) => {
       }
     }
 
-    const accumulatedRemaining = monthlyAmount + income - expense
-    // extra income topped up into `daily` mid-cycle raises the daily allowance for the
-    // rest of the cycle too, not just the accumulated total — confirmed with the user
-    const dailyRate = cycle.totalDays > 0 ? (monthlyAmount + income) / cycle.totalDays : 0
+    // `income` already includes this cycle's top-up transaction (see ensureCycleTopUp above),
+    // so the monthly rate is no longer added again here — extra income topped up into `daily`
+    // mid-cycle still raises the daily allowance for the rest of the cycle — confirmed with the user
+    const accumulatedRemaining = income - expense
+    const dailyRate = cycle.totalDays > 0 ? income / cycle.totalDays : 0
     const dailyRemaining = dailyRate * cycle.elapsedDays - realSpending
 
     return {
@@ -114,6 +158,7 @@ export default defineEventHandler(async (event) => {
       .limit(1)
       .maybeSingle()
     const budgeted = rate?.monthly_amount ?? 0
+    await ensureCycleTopUp(supabase, profileId, 'fixed', cycle.start, budgeted)
 
     const { data: transactions, error: txError } = await supabase
       .from('transactions')
@@ -125,15 +170,24 @@ export default defineEventHandler(async (event) => {
       throw createError({ statusCode: 500, statusMessage: txError.message })
     }
 
-    let spent = 0
+    let income = 0
+    let expense = 0
+    let spent = 0 // excludes transfers — the "used" figure shown against the budgeted amount
     for (const tx of (transactions ?? []) as TransactionWithAllocations[]) {
-      if (tx.type !== 'expense' || tx.is_transfer) continue
       for (const alloc of tx.transaction_allocations) {
-        if (alloc.fund === 'fixed') spent += alloc.amount
+        if (alloc.fund !== 'fixed') continue
+        if (tx.type === 'income') {
+          income += alloc.amount
+        } else {
+          expense += alloc.amount
+          if (!tx.is_transfer) spent += alloc.amount
+        }
       }
     }
 
-    return { budgeted, spent, remaining: budgeted - spent, cycle }
+    // `income` includes this cycle's top-up transaction plus any transfers in; `expense`
+    // includes transfers out — so moving money in or out of `fixed` now actually moves `remaining`
+    return { budgeted, spent, remaining: income - expense, cycle }
   }
 
   if (view === 'category') {
