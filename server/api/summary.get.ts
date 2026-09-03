@@ -114,6 +114,7 @@ export default defineEventHandler(async (event) => {
 
     let income = 0
     let expense = 0
+    let transferOut = 0 // money moved out of `daily` — shrinks the pot, unlike real spending
     let realSpending = 0 // excludes transfers — used for the pacing figures below
     for (const tx of (transactions ?? []) as TransactionWithAllocations[]) {
       for (const alloc of tx.transaction_allocations) {
@@ -122,16 +123,19 @@ export default defineEventHandler(async (event) => {
           income += alloc.amount
         } else {
           expense += alloc.amount
-          if (!tx.is_transfer) realSpending += alloc.amount
+          if (tx.is_transfer) transferOut += alloc.amount
+          else realSpending += alloc.amount
         }
       }
     }
 
-    // `income` already includes this cycle's top-up transaction (see ensureCycleTopUp above),
-    // so the monthly rate is no longer added again here — extra income topped up into `daily`
-    // mid-cycle still raises the daily allowance for the rest of the cycle — confirmed with the user
+    // `income` already includes this cycle's top-up transaction (see ensureCycleTopUp above).
+    // `netInflow` is the pot available this cycle: top-up + any extra income, minus money
+    // transferred out — extra income raises the daily allowance for the rest of the cycle,
+    // and transferring money out now shrinks it too — confirmed with the user
+    const netInflow = income - transferOut
     const accumulatedRemaining = income - expense
-    const dailyRate = cycle.totalDays > 0 ? income / cycle.totalDays : 0
+    const dailyRate = cycle.totalDays > 0 ? netInflow / cycle.totalDays : 0
     const dailyRemaining = dailyRate * cycle.elapsedDays - realSpending
 
     return {
@@ -157,8 +161,8 @@ export default defineEventHandler(async (event) => {
       .order('created_at', { ascending: false })
       .limit(1)
       .maybeSingle()
-    const budgeted = rate?.monthly_amount ?? 0
-    await ensureCycleTopUp(supabase, profileId, 'fixed', cycle.start, budgeted)
+    const rateAmount = rate?.monthly_amount ?? 0
+    await ensureCycleTopUp(supabase, profileId, 'fixed', cycle.start, rateAmount)
 
     const { data: transactions, error: txError } = await supabase
       .from('transactions')
@@ -171,23 +175,25 @@ export default defineEventHandler(async (event) => {
     }
 
     let income = 0
-    let expense = 0
-    let spent = 0 // excludes transfers — the "used" figure shown against the budgeted amount
+    let transferOut = 0 // money moved out of `fixed` — shrinks the pot, unlike real spending
+    let spent = 0 // excludes transfers — the "used" figure shown against the pot
     for (const tx of (transactions ?? []) as TransactionWithAllocations[]) {
       for (const alloc of tx.transaction_allocations) {
         if (alloc.fund !== 'fixed') continue
         if (tx.type === 'income') {
           income += alloc.amount
+        } else if (tx.is_transfer) {
+          transferOut += alloc.amount
         } else {
-          expense += alloc.amount
-          if (!tx.is_transfer) spent += alloc.amount
+          spent += alloc.amount
         }
       }
     }
 
-    // `income` includes this cycle's top-up transaction plus any transfers in; `expense`
-    // includes transfers out — so moving money in or out of `fixed` now actually moves `remaining`
-    return { budgeted, spent, remaining: income - expense, cycle }
+    // the pot for this cycle is the top-up plus any transfers in, minus transfers out — not just
+    // the flat rate — so `budgeted`/`remaining` (and the "X of Y" progress bar) move with transfers
+    const pot = income - transferOut
+    return { budgeted: pot, spent, remaining: pot - spent, cycle }
   }
 
   if (view === 'category') {
