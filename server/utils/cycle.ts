@@ -1,3 +1,12 @@
+// Formats using local getters, never toISOString(): the dates here are built as local midnight,
+// and on a machine ahead of UTC (this project's own, at +07) toISOString() rolls them back a day.
+export function toISODate(d: Date) {
+  const y = d.getFullYear()
+  const m = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${y}-${m}-${day}`
+}
+
 export interface CycleRange {
   start: string
   end: string
@@ -6,6 +15,11 @@ export interface CycleRange {
   labelYear: number
   labelMonth: number
 }
+
+export function isWithinCycle(date: string, cycle: CycleRange) {
+  return date >= cycle.start && date <= cycle.end
+}
+
 
 export function getCycleRange(cycleStartDay: number, referenceDateStr: string): CycleRange {
   const ref = new Date(`${referenceDateStr}T00:00:00`)
@@ -35,16 +49,9 @@ export function getCycleRange(cycleStartDay: number, referenceDateStr: string): 
       ? { labelYear: cycleStartYear, labelMonth: cycleStartMonth }
       : { labelYear: end.getFullYear(), labelMonth: end.getMonth() }
 
-  const toISO = (d: Date) => {
-    const y = d.getFullYear()
-    const m = String(d.getMonth() + 1).padStart(2, '0')
-    const day = String(d.getDate()).padStart(2, '0')
-    return `${y}-${m}-${day}`
-  }
-
   return {
-    start: toISO(start),
-    end: toISO(end),
+    start: toISODate(start),
+    end: toISODate(end),
     totalDays,
     elapsedDays,
     ...label

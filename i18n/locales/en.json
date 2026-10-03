@@ -56,6 +56,31 @@
     "date": "Date",
     "note": "Note (optional)"
   },
+  "balance": {
+    "title": "Money on hand",
+    "adjustButton": "Adjust",
+    "adjustTitle": "Adjust the balance",
+    "adjustSubtitle": "Count what you actually have right now and type it in. The difference is recorded as an entry showing what it went from and to — this figure never resets on the cycle boundary, so leftover from previous cycles is already in it.",
+    "countedLabel": "Counted for real",
+    "inSystem": "recorded ฿{amount}",
+    "deltaUp": "more than recorded (income not yet entered)",
+    "deltaDown": "less than recorded (spending you forgot to enter)",
+    "absorbFund": "Which fund takes the difference",
+    "absorbHint": "Daily by default — what goes unrecorded is usually day-to-day spending.",
+    "confirmButton": "Save adjustment"
+  },
+  "close": {
+    "bannerTitle": "{cycle} has ended but was never closed",
+    "bannerBody": "฿{amount} is still sitting in the daily/fixed funds. Leave it unclosed and that money drops off the books when the new cycle starts.",
+    "bannerAction": "Close the cycle",
+    "title": "Close {cycle}",
+    "subtitle": "Count what each fund actually held on the last day and type it in. The difference is recorded first, then the remainder is swept into savings — in that order, or spending you forgot to record gets swept into savings too and stays there for good.",
+    "sweepLabel": "Move the remaining ฿{amount} into savings",
+    "sweepCoverLabel": "Cover ฿{amount} overspent from savings",
+    "sweepHint": "After the sweep, daily and fixed land on exactly 0 and the new cycle starts from the budget you set.",
+    "sweepNote": "Closing {cycle}",
+    "confirmButton": "Close the cycle"
+  },
   "settings": {
     "title": "Settings",
     "theme": "Theme",
@@ -96,7 +121,9 @@
     "vocabularyNeverUpdated": "Never refreshed yet",
     "calibrateCaption": "Let AI check for duplicate/inconsistent item names and merge them into one.",
     "calibrateButton": "Clean up item names",
-    "calibrateNoSuggestions": "No cleanup suggestions right now"
+    "calibrateNoSuggestions": "No cleanup suggestions right now",
+    "reconcileCaption": "Cash on hand not matching the app? (forgotten entries, or leftover carried from last cycle) Adjust any of the three funds to match.",
+    "reconcileButton": "Adjust to real balance"
   },
   "dashboard": {
     "title": "Daily Budget Tracker",
@@ -132,13 +159,25 @@
     "prevMonth": "Previous month",
     "nextMonth": "Next month",
     "total": "Total",
-    "noSpending": "No spending this month yet"
+    "noSpending": "No spending this month yet",
+    "autoTopUp": "Auto top-up"
   },
   "toast": {
     "saved": "Saved",
     "deleted": "Transaction deleted",
     "categoryCreated": "Created new sub-category: {name}",
     "resetDone": "Database reset ({count} transactions deleted)",
-    "vocabularyRefreshed": "Vocabulary refreshed"
+    "vocabularyRefreshed": "Vocabulary refreshed",
+    "reconcileDone": "Adjusted {count} fund(s)",
+    "cycleClosed": "Cycle closed · ฿{amount} moved into savings",
+    "balanceAdjusted": "Balance adjusted by ฿{amount}"
+  },
+  "reconcile": {
+    "title": "Match the recorded balance to real cash",
+    "subtitle": "Count what each fund actually holds and type it in. The gap is recorded as an \"adjustment\" entry showing what it went from and to. Funds you leave alone are untouched.",
+    "inSystem": "recorded ฿{amount}",
+    "deltaUp": "unrecorded money in (e.g. last cycle’s leftover)",
+    "deltaDown": "unrecorded spending",
+    "confirmButton": "Save adjustment ({count})"
   }
 }

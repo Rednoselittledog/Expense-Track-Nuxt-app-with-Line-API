@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button'
 import { toast } from 'vue-sonner'
 import { Wallet, Settings } from '@lucide/vue'
 
-const { t } = useI18n()
+const { t, locale } = useI18n()
 const supabase = useSupabase()
 const route = useRoute()
 
@@ -95,6 +95,43 @@ watchEffect(() => {
   }
 })
 
+// the cycle that just ended, if it still has money stranded in daily/fixed — the sweep into
+// savings is the step that never happens on its own, so it needs to come and find the user
+interface CloseSummary {
+  cycle: { start: string; end: string; labelYear: number; labelMonth: number }
+  daily: number
+  fixed: number
+  savings: number
+  stranded: number
+  needsClose: boolean
+}
+const { data: closeSummary, refresh: refreshClose } = await useAsyncData(
+  'cycle-close',
+  () => $fetch<CloseSummary>('/api/summary', { query: { profileId: profileId.value, view: 'close' } }),
+  { watch: [profileId], lazy: true }
+)
+
+// real money on the books — all funds, all time, no cycle window. Unlike the three cards this
+// never resets, so leftover that drops off them at a cycle boundary is still counted here
+const { data: balance, refresh: refreshBalance } = await useAsyncData(
+  'total-balance',
+  () => $fetch<{ total: number }>('/api/summary', { query: { profileId: profileId.value, view: 'balance' } }),
+  { watch: [profileId], lazy: true }
+)
+const balanceDialogOpen = ref(false)
+
+const closeDialogOpen = ref(false)
+const closingLabel = computed(() =>
+  closeSummary.value
+    ? formatMonthYear(closeSummary.value.cycle.labelYear, closeSummary.value.cycle.labelMonth, locale.value)
+    : ''
+)
+const closingBalances = computed(() => ({
+  daily: closeSummary.value?.daily ?? 0,
+  fixed: closeSummary.value?.fixed ?? 0,
+  savings: closeSummary.value?.savings ?? 0
+}))
+
 const balanceCardsRef = ref()
 const transactionListRef = ref()
 const categoryBreakdownRef = ref()
@@ -122,6 +159,8 @@ function refreshAll() {
   transactionListRef.value?.refresh()
   categoryBreakdownRef.value?.refresh()
   refreshToday()
+  refreshClose()
+  refreshBalance()
   parseText.value = ''
 }
 </script>
@@ -165,6 +204,29 @@ function refreshAll() {
 
     <div v-else class="space-y-6 pb-20 md:pb-0">
       <div :class="{ 'hidden md:block': mobileTab !== 'home' }" class="space-y-6">
+        <div
+          v-if="closeSummary?.needsClose"
+          class="border-warning/40 bg-warning/10 flex flex-col gap-3 rounded-2xl border p-4 sm:flex-row sm:items-center sm:justify-between"
+        >
+          <div>
+            <p class="text-small">{{ t('close.bannerTitle', { cycle: closingLabel }) }}</p>
+            <p class="text-caption">
+              {{ t('close.bannerBody', { amount: formatAmount(closeSummary.stranded) }) }}
+            </p>
+          </div>
+          <Button class="shrink-0" @click="closeDialogOpen = true">{{ t('close.bannerAction') }}</Button>
+        </div>
+
+        <div class="bg-card shadow-soft flex flex-wrap items-center justify-between gap-3 rounded-2xl border p-4">
+          <div>
+            <p class="text-caption">{{ t('balance.title') }}</p>
+            <p class="text-amount-lg">฿{{ formatAmount(balance?.total ?? 0) }}</p>
+          </div>
+          <Button variant="outline" size="sm" class="shrink-0" @click="balanceDialogOpen = true">
+            {{ t('balance.adjustButton') }}
+          </Button>
+        </div>
+
         <DashboardBalanceCards ref="balanceCardsRef" :profile-id="profileId" />
 
         <div class="hidden md:flex md:justify-end">
@@ -228,6 +290,22 @@ function refreshAll() {
     />
 
     <LedgerTransferDialog v-model:open="transferDialogOpen" :profile-id="profileId" @saved="refreshAll" />
+
+    <LedgerBalanceAdjustDialog
+      v-model:open="balanceDialogOpen"
+      :profile-id="profileId"
+      :current="balance?.total ?? 0"
+      @saved="refreshAll"
+    />
+
+    <LedgerReconcileDialog
+      v-model:open="closeDialogOpen"
+      :profile-id="profileId"
+      :current="closingBalances"
+      :occurred-on="closeSummary?.cycle.end"
+      :closing-label="closingLabel"
+      @saved="refreshAll"
+    />
     </div>
   </div>
 </template>

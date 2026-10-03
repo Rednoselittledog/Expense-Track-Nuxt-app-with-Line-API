@@ -33,7 +33,7 @@ create table transactions (
   description text not null,
   raw_text text,
   occurred_on date not null default current_date,
-  source text not null default 'web' check (source in ('web','line')),
+  source text not null default 'web' check (source in ('web','line','system')),
   created_at timestamptz not null default now()
 );
 create index transactions_profile_occurred_idx on transactions (profile_id, occurred_on);
@@ -49,7 +49,7 @@ create table transaction_allocations (
 create table budget_rates (
   id uuid primary key default gen_random_uuid(),
   profile_id uuid not null references profiles(id) on delete cascade,
-  fund text not null default 'daily' check (fund in ('daily','fixed')),
+  fund text not null default 'daily' check (fund in ('daily','fixed','savings')),
   monthly_amount numeric(12,2) not null check (monthly_amount >= 0),
   effective_from date not null default current_date,
   created_at timestamptz not null default now()

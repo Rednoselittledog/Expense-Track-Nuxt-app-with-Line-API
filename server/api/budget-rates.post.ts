@@ -2,7 +2,7 @@ import { z } from 'zod'
 
 const requestSchema = z.object({
   profileId: z.string().min(1),
-  fund: z.enum(['daily', 'fixed']).default('daily'),
+  fund: z.enum(['daily', 'fixed', 'savings']).default('daily'),
   monthly_amount: z.coerce.number().min(0),
   effective: z.enum(['now', 'next_cycle']).default('now')
 })
@@ -31,7 +31,7 @@ export default defineEventHandler(async (event) => {
     const cycle = getCycleRange(profile.cycle_start_day, today)
     const nextStart = new Date(`${cycle.end}T00:00:00`)
     nextStart.setDate(nextStart.getDate() + 1)
-    effectiveFrom = nextStart.toISOString().slice(0, 10)
+    effectiveFrom = toISODate(nextStart)
   }
 
   const { data, error } = await supabase

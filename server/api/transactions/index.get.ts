@@ -19,7 +19,7 @@ export default defineEventHandler(async (event) => {
   let query = supabase
     .from('transactions')
     .select(
-      'id, type, is_transfer, amount, description, occurred_on, category_id, categories(name, parent_id), transaction_allocations(fund, amount)'
+      'id, type, is_transfer, amount, description, occurred_on, category_id, source, categories(name, parent_id), transaction_allocations(fund, amount)'
     )
     .eq('profile_id', profileId)
     .order('occurred_on', { ascending: false })
@@ -34,5 +34,18 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 500, statusMessage: error.message })
   }
 
-  return { transactions: data }
+  // `editable` is stamped here rather than inferred in the UI, so the buttons the user sees and
+  // the rule assertEditableTransaction enforces can't drift apart
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('cycle_start_day')
+    .eq('id', profileId)
+    .single()
+  const cycle = getCycleRange(profile?.cycle_start_day ?? 1, todayInTimezone())
+  const transactions = (data ?? []).map((tx) => ({
+    ...tx,
+    editable: !tx.is_transfer && !(tx.source === 'system' && isWithinCycle(tx.occurred_on, cycle))
+  }))
+
+  return { transactions }
 })

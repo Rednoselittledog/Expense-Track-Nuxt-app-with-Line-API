@@ -25,6 +25,8 @@ interface TransactionRow {
   amount: number
   description: string
   occurred_on: string
+  source: 'web' | 'line' | 'system'
+  editable: boolean
   categories: { name: string; parent_id: string | null } | null
   transaction_allocations: { fund: 'daily' | 'fixed' | 'savings'; amount: number }[]
 }
@@ -75,7 +77,15 @@ function fundLabel(fund: 'daily' | 'fixed' | 'savings') {
 function categoryLabel(tx: TransactionRow) {
   if (tx.categories) return tx.categories.name
   if (tx.is_transfer) return t('dashboard.transfer')
+  if (tx.source === 'system') return t('dashboard.autoTopUp')
   return '—'
+}
+
+// transfers come in pairs and this cycle's auto top-up is owned by the budget setting — editing
+// either by hand would be undone behind the user's back. The server decides and stamps it, so
+// the hidden buttons and the API's own refusal can never disagree.
+function canEdit(tx: TransactionRow) {
+  return tx.editable
 }
 
 const deleteTarget = ref<TransactionRow | null>(null)
@@ -196,7 +206,7 @@ defineExpose({ refresh })
                   </div>
                 </TableCell>
                 <TableCell>
-                  <div v-if="!tx.is_transfer" class="flex justify-end gap-1">
+                  <div v-if="canEdit(tx)" class="flex justify-end gap-1">
                     <Button variant="ghost" size="icon" :aria-label="t('actions.edit')" @click="emit('edit', tx)">
                       <Pencil class="size-4" />
                     </Button>
@@ -235,7 +245,7 @@ defineExpose({ refresh })
                       {{ fundLabel(alloc.fund) }}
                     </Badge>
                   </div>
-                  <div v-if="!tx.is_transfer" class="flex shrink-0 gap-1">
+                  <div v-if="canEdit(tx)" class="flex shrink-0 gap-1">
                     <Button variant="ghost" size="icon" :aria-label="t('actions.edit')" @click="emit('edit', tx)">
                       <Pencil class="size-4" />
                     </Button>

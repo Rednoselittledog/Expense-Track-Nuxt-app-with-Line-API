@@ -20,22 +20,7 @@ export default defineEventHandler(async (event) => {
 
   const supabase = useSupabase()
 
-  const { data: existing, error: fetchError } = await supabase
-    .from('transactions')
-    .select('id, is_transfer')
-    .eq('id', id)
-    .eq('profile_id', profileId)
-    .maybeSingle()
-
-  if (fetchError) {
-    throw createError({ statusCode: 500, statusMessage: fetchError.message })
-  }
-  if (!existing) {
-    throw createError({ statusCode: 404, statusMessage: 'transaction not found' })
-  }
-  if (existing.is_transfer) {
-    throw createError({ statusCode: 403, statusMessage: 'transfer transactions cannot be edited' })
-  }
+  await assertEditableTransaction(supabase, id, profileId)
 
   let categoryId: string | null = null
   let createdCategory: string | null = null

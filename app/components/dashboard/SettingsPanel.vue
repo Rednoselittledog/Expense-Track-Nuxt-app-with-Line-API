@@ -9,6 +9,8 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { toast } from 'vue-sonner'
 import { SlidersHorizontal, Wallet, Check, TriangleAlert, Tags } from '@lucide/vue'
 import type { CalibrateInitialGroup } from '~/types/calibrate'
+import type { Fund } from '~/types/ledger'
+import { FUNDS } from '~/types/ledger'
 
 const { t, locale: uiLocale, setLocale } = useI18n()
 const colorMode = useColorMode()
@@ -21,22 +23,35 @@ const profileId = computed(() => profile.value?.id ?? '')
 // re-fetching, so switching to this tab is instant just like transactions/categories
 const { data: dailySummary, pending: dailyPending } = useAsyncData(
   'balance-cards-daily',
-  () => $fetch<{ monthlyAmount: number }>('/api/summary', { query: { profileId: profileId.value, view: 'daily' } }),
+  () =>
+    $fetch<{ monthlyAmount: number }>('/api/summary', {
+      query: { profileId: profileId.value, view: 'daily' }
+    }),
   { watch: [profileId], lazy: true }
 )
 const { data: fixedSummary, pending: fixedPending } = useAsyncData(
   'balance-cards-fixed',
-  () => $fetch<{ budgeted: number }>('/api/summary', { query: { profileId: profileId.value, view: 'fixed' } }),
+  () =>
+    $fetch<{ monthlyAmount: number }>('/api/summary', {
+      query: { profileId: profileId.value, view: 'fixed' }
+    }),
+  { watch: [profileId], lazy: true }
+)
+const { data: savingsSummary, pending: savingsPending } = useAsyncData(
+  'balance-cards-savings',
+  () =>
+    $fetch<{ monthlyAmount: number }>('/api/summary', {
+      query: { profileId: profileId.value, view: 'savings' }
+    }),
   { watch: [profileId], lazy: true }
 )
 
 const locale = ref<'th' | 'en'>('th')
 const cycleStartDay = ref(1)
-const budgetFund = ref<'daily' | 'fixed'>('daily')
-const dailyAmount = ref(0)
-const dailyCurrentAmount = ref(0)
-const fixedAmount = ref(0)
-const fixedCurrentAmount = ref(0)
+const budgetFund = ref<Fund>('daily')
+// what's typed in the box vs what's already stored, per fund — the diff is what gets POSTed
+const amounts = ref<Record<Fund, number>>({ daily: 0, fixed: 0, savings: 0 })
+const savedAmounts = ref<Record<Fund, number>>({ daily: 0, fixed: 0, savings: 0 })
 const budgetEffective = ref<'now' | 'next_cycle'>('now')
 const saving = ref(false)
 const descriptionVocabulary = ref('')
@@ -47,13 +62,13 @@ const calibrateGroups = ref<CalibrateInitialGroup[]>([])
 const analyzing = ref(false)
 
 const activeAmount = computed({
-  get: () => (budgetFund.value === 'daily' ? dailyAmount.value : fixedAmount.value),
+  get: () => amounts.value[budgetFund.value],
   set: (v: number) => {
-    if (budgetFund.value === 'daily') dailyAmount.value = v
-    else fixedAmount.value = v
+    amounts.value[budgetFund.value] = v
   }
 })
-const activeCurrentAmount = computed(() => (budgetFund.value === 'daily' ? dailyCurrentAmount.value : fixedCurrentAmount.value))
+const activeCurrentAmount = computed(() => savedAmounts.value[budgetFund.value])
+const budgetPending = computed(() => dailyPending.value || fixedPending.value || savingsPending.value)
 
 watchEffect(() => {
   if (profile.value) {
@@ -62,13 +77,21 @@ watchEffect(() => {
     descriptionVocabulary.value = profile.value.description_vocabulary
     descriptionVocabularyUpdatedAt.value = profile.value.description_vocabulary_updated_at
   }
-  if (dailySummary.value) {
-    dailyAmount.value = dailySummary.value.monthlyAmount
-    dailyCurrentAmount.value = dailySummary.value.monthlyAmount
+  // the configured rate, not the live pot — a fund that received a transfer holds more than
+  // its rate, and saving that back would quietly raise the budget
+  const rates: Partial<Record<Fund, number>> = {
+    daily: dailySummary.value?.monthlyAmount,
+    fixed: fixedSummary.value?.monthlyAmount,
+    savings: savingsSummary.value?.monthlyAmount
   }
-  if (fixedSummary.value) {
-    fixedAmount.value = fixedSummary.value.budgeted
-    fixedCurrentAmount.value = fixedSummary.value.budgeted
+  for (const fund of FUNDS) {
+    const rate = rates[fund]
+    if (rate === undefined) continue
+    // only reseed a box the user hasn't touched: these keys are shared with the dashboard and
+    // re-fetch on their own (saving, switching profile, coming back to the tab), and overwriting
+    // a half-typed budget loses the edit while still letting save report success
+    if (amounts.value[fund] === savedAmounts.value[fund]) amounts.value[fund] = rate
+    savedAmounts.value[fund] = rate
   }
 })
 
@@ -90,29 +113,25 @@ async function confirmSave() {
         description_vocabulary: descriptionVocabulary.value
       }
     })
-    if (dailyAmount.value !== dailyCurrentAmount.value) {
+    let budgetChanged = false
+    for (const fund of FUNDS) {
+      if (amounts.value[fund] === savedAmounts.value[fund]) continue
       await $fetch('/api/budget-rates', {
         method: 'POST',
         body: {
           profileId: profileId.value,
-          fund: 'daily',
-          monthly_amount: dailyAmount.value,
+          fund,
+          monthly_amount: amounts.value[fund],
           effective: budgetEffective.value
         }
       })
-      dailyCurrentAmount.value = dailyAmount.value
+      savedAmounts.value[fund] = amounts.value[fund]
+      budgetChanged = true
     }
-    if (fixedAmount.value !== fixedCurrentAmount.value) {
-      await $fetch('/api/budget-rates', {
-        method: 'POST',
-        body: {
-          profileId: profileId.value,
-          fund: 'fixed',
-          monthly_amount: fixedAmount.value,
-          effective: budgetEffective.value
-        }
-      })
-      fixedCurrentAmount.value = fixedAmount.value
+    // the dashboard stays mounted behind this tab, so its cached figures would otherwise keep
+    // showing the old budget until a full reload
+    if (budgetChanged) {
+      await refreshNuxtData(['total-balance', 'balance-cards-daily', 'balance-cards-fixed', 'balance-cards-savings'])
     }
     toast.success(t('toast.saved'))
     navigateTo('/')
@@ -283,14 +302,15 @@ async function refreshVocabulary() {
           <div>
             <label class="text-small mb-2 block">{{ t('settings.budgetFund') }}</label>
             <Tabs v-model="budgetFund" class="mb-3">
-              <TabsList class="grid w-full grid-cols-2">
+              <TabsList class="grid w-full grid-cols-3">
                 <TabsTrigger value="daily">{{ t('dashboard.daily') }}</TabsTrigger>
                 <TabsTrigger value="fixed">{{ t('dashboard.fixed') }}</TabsTrigger>
+                <TabsTrigger value="savings">{{ t('dashboard.savings') }}</TabsTrigger>
               </TabsList>
             </Tabs>
 
             <label class="text-small mb-2 block">{{ t('settings.monthlyBudget') }}</label>
-            <Skeleton v-if="dailyPending || fixedPending" class="h-9 w-full" />
+            <Skeleton v-if="budgetPending" class="h-9 w-full" />
             <Input
               v-else
               type="number"
@@ -325,6 +345,7 @@ async function refreshVocabulary() {
               {{ t('settings.cycleStartWarning') }}
             </p>
           </div>
+
         </CardContent>
       </Card>
     </div>
@@ -416,5 +437,6 @@ async function refreshVocabulary() {
       :profile-id="profileId"
       @saved="refreshVocabulary"
     />
+
   </div>
 </template>
